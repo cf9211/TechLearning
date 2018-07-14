@@ -1,0 +1,35 @@
+Interview Questions
+**********************
+
+
+Java:
+------
+1. Internal of HashMap, Arraylist , Collections etc.
+2. Sorting Hashmap using key.
+3.How can server shares the update to client without client request.(Hint : Websocket)
+4.Consumer, Producer implementation using multi-threading(Inter thread communication).
+5.Design patterns( strategy, factory, singleton...etc).
+6.Factory classes in Java(Hint : Runtime, Calender)
+7. Method and annotation of REST, Client and Server in REST.
+
+
+
+UI:
+---
+1. Changing color border of warning box using javascript.
+
+
+Programming:
+------------
+1. WAP to find no of duplicate in an array, no of times every duplicate repeated, Lowest value 
+that is duplicated.  
+2. Find last char in String which got duplicated.EX.( "Ramesh rao banaras wale" OUTPUT=e repeated 2 times).
+3. How consumer aware of Producer task completion.
+
+
+DataStructure:
+-------------
+1. Flight send request for landing to Airport. Airport must be able to check vacant slot with atleast
+   5 minutes of difference with previous and next  request. Application must be able to delete served
+   request And should not take request for current time and Past time.(Hint: Use Balanced tree)
+2.
