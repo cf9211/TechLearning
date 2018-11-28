@@ -1,0 +1,456 @@
+Day1:
+1.Monolithic
+2.Dividing Codebase
+3.Dividing Database
+
+
+Day2:
+1.Spring Clound
+2.Ribbon-Load Balancer
+3.Eureka-Discovery Server
+
+Day3:
+1. Hystrix-Circuit Breaker
+2. Zuul-API Gateway
+3. Sleuth-Tracing
+
+
+
+
+Day-1:
+=======
+*******
+1.Monolithic
+2.Dividing Codebase
+3.Dividing Database
+
+
+Q. What is monolithic application?
+	->A monolithic application is self-contained, and independent from other computing applications
+
+Infytel-customerMs
+===================
+
+/customers  POST
+createCustomer()
+
+/login  POST
+login()
+
+/customers/{phoneNo}  GET
+getCustomerProfile() -> Customer, Plan, FriendFamily
+
+
+
+Infytel-CallDetailsMs
+=======================
+/customers/{phoneNo}/calldetails  GET
+getCustomerCallDetails
+
+
+Infytel-PlanMs
+=======================
+
+/plans  GET
+getAllPlans()
+
+
+Infytel-FriendFamilyMs
+=======================
+/customers/{phoneNo}/friends  POST
+saveFriend()->FriendFamily
+
+
+Tables:
+--------
+Cusotmer
+Plan
+CallDetails
+FriendFamily
+
+
+
+
+
+
+	
+	
+	
+	
+Day-2:
+=========
+*********
+1.Spring Clound
+2.Ribbon-Load Balancer
+3.Eureka-Discovery Server
+
+1. Spring Cloud	
+	
+Infytel-Cusotmer database
+Cusotmer Ms
+application.properties
+   application name=Cusotmer Ms
+   server porth=8200
+   driver class name= mysql
+   database url=cpstel-Cusotmer
+   username= root
+   password= rootauto-ddl=update
+   logging.file=Cusotmer.log
+   friend-uri = 
+   plan-uri = 
+   
+
+
+
+Infytel-CallDetails database
+CallDetails Ms
+application.properties
+   application name=CallDetails Ms
+   server porth=8100
+   driver class name= mysql
+   database url=cpstel-CallDetails
+   username= root
+   password= rootauto-ddl=update
+   logging.file=CallDetails.log
+   
+   
+
+Infytel-Plan database
+Plan Ms
+application.properties
+   application name=Plan Ms
+   server porth=8300
+   driver class name= mysql
+   database url=cpstel-Plan
+   username= root
+   password= rootauto-ddl=update
+   logging.file=Plan.log
+
+
+
+Infytel-FriendFamily database
+FriendFamily Ms
+application.properties
+   application name=Friend Ms
+   server porth=8400
+   driver class name= mysql
+   database url=cpstel-friendfamily
+   username= root
+   password= rootauto-ddl=update
+   logging.file=FriendFamily.log
+   
+   
+   
+1. common properties for all microservies put in cpsgit
+
+2. application.properties
+   driver class name= mysql
+   username= root
+   password= rootauto-ddl=update
+   logging.file=FriendFamily.log	
+	
+	
+3. Generate new project/app using spring.io by adding dependency cloud/config server
+
+4. Add @EnableConfigServer in main class
+
+5.In application.properties
+	------------------------------
+	spring .application.name=ConfigServer
+	Server.port= 1111
+	spring.config.server.git.uri=
+	logging.file=ConfigServer.log
+	
+6. Add cliet dependency for Config server in all client MS
+
+7. Add bootstrap.properties in all client  MS app
+
+8. Add sping.cloud.config.uri=http://localhost:1111   in bootstrap.properties
+ 
+ 
+ Run Config Server ->it will run bootstrap.properties -> load application.properties and spring.application.name(eg  = PlanMs) 
+ application.properties of respective MS which include spring.application.name= PlanMs i.e PlanMs.properties in config server
+ 
+ 
+ 
+ # This is one use of spring  cloud to store common data but not the only use.
+ 
+ 
+ 
+ 2. Ribbon - Load Balancer :
+	------------------------
+	
+Customer Ms		-> Manager
+getProfile(){
+
+it will call Frend Ms
+
+}
+
+
+Depends of no of request to Friend MS , more instaces must be created
+Friend Ms(1)		
+Friend Ms(2)
+...
+
+Load Balancer required to  equally distribute request.
+
+
+# To get dependency for load balancer for ur application
+	->create new app from start.spring.io  with ribbon as dependency, generate application -> copy and paste dependency to your application
+	
+    -> Create new class CustomerConfig
+	-> apply @RibbonClient(name="custRibbon") on top of CustomerController
+	-> create restTemplate() with @Bean @LoadBalance
+	->go to controller create REstTemplate instance with @Autowired
+	-> use this instance to get Friend MS object in controller instead of normal restTemplate.
+	-> Add following to application.properties
+		custribbon.ribbon.eureka.enabled=false
+		custribbon.ribbon.listofServers= http://localhost:8030, http://localhost:8031 ...url of service
+	
+	
+	# Here simply we are sending request through ribbon load balancer.
+	
+	# Server side load balancer is hardwar and client side load balancer is a software.
+	
+	# Ribbon -LoadBalance follows alternative algorithm
+	
+	# we will get error if any requesting instance is off , which is the drawback of ribbon.
+	  (For if 2nd is off, we'll get error for all even request like reques2,4,6...)
+
+
+
+3.Eureka-Discovery Server 	  
+  ------------------------
+  
+  Customer Ms
+  getProgile(){
+  
+  plan service
+  
+  friend service
+  
+  }
+  
+  
+  # what happen  when port no of plan/friend change its port no.
+    
+	-> Service Discovery -Eureka
+ 
+    i. create boot application with eureka  server and import it to you workspace.
+	
+	ii. @EnableEurekaServer at top of main class
+	
+	iii. configure application.properties file
+		spring.application.name=Eureka
+		server.port=2222
+		
+	iv. Create Eureka Clent for all Microservices
+	    a. Add dependency of Eureka client in every MS.
+		b. @EnableDiscoveryClient in main class of every MS.
+
+		server: port: ${PORT:${SERVER_PORT:0}}  -> Defines Random port no
+		This port no will override port no in properties file.
+		
+	v. Rest call will proceed through Eureka (eg.PLANMS, FRIENDMS etc from service Discovery )
+		
+Cusotmer Ms
+.............
+In CustomerConfig we can remove @Ribbon since eureka by default support Ribbon.
+
+
+
+
+   # Here the issue of Ribbon is also solved
+     If any instance is off the request  will be directed to other instance and we'll not get any error.
+	 
+	 
+ # additional line application.properties of Service-Discovery	 
+ 
+   eureka.client.fetch-registry=false #tries to fetch with general eureka to use other MS
+   eureka.client.register-with-eureka=false #tries to register with general eureka to use other MS
+   eureka.client.service-url.defaultZone=http://localhost:2222/eureka
+   
+Multiple instances of Service-Dicovery
+SD1, SD2, SD3
+Each instances maintain the complete info and also instances also register with each other.
+defaultZone properties avoid selfregistration i.e.(SD1  Will not register with SD1)
+
+
+
+
+	
+	
+	
+Day3:
+======
+******
+
+1. Hystrix-Circuit Breaker
+2. Zuul-API Gateway
+3. Sleuth-Tracing
+	
+	
+1. Hystrix-Circuit Breaker:
+---------------------------
+
+Leave car(if not starting) and take a cab to reach office and try to start car next day again.
+(If any MS is down on repeated request do this i.e something else)
+
+
+customerMs
+
+localhost:8200/customers/9009009001
+
+@Hystrix(fallmethod= "getProfileFallback")
+getProfile(){
+
+Plan Ms
+ 
+Friend Ms
+
+}
+
+getProfileFallback(){
+
+return 1 or 2
+
+}
+
+-> we'll get output when Plan MS and Friend MS is up.
+-> Let's say Friend MS is Down
+-> Available Options are
+	i. Come back later
+	ii. Dont call Frient MS  and give rest of the profile
+
+
+8:00 localhost:8200/customers/9009009001 2min
+getProfile() Friend MS  DOWN 	1min
+getProfileFallback()  1min
+
+8:03 localhost:8200/customers/9009009001 2min
+getProfile() Friend MS  DOWN 	1min
+getProfileFallback()  1min
+
+8:04 localhost:8200/customers/9009009001 2min
+getProfile() Friend MS  DOWN 	1min
+getProfileFallback()  1min
+
+8:07 localhost:8200/customers/9009009001 2min
+getProfile() Friend MS  DOWN 	1min
+getProfileFallback()  1min
+
+8:09 localhost:8200/customers/9009009001 2min
+getProfileFallback()  1min
+
+
+8:11 localhost:8200/customers/9009009001 2min
+getProfileFallback()  1min
+
+9:00 localhost:8200/customers/9009009001 2min
+getProfile() Friend MS  UP   1min
+
+I tried for 4 times in 9 min it was throwing error 
+so for next 1hr i directly made reques to fallback
+and after this again call profile
+
+
+Changes in customer which is using FriendMS which may be down
+--------------------------------------------------------------
+	1.Goto pom.xml of Customer and add dependency
+	  spring-cloud-starter-netflix-hystrix
+
+	2. main() of Customer
+	  @EnableCircuitBreaker
+
+	3. Go to controller
+	   Add @HystericCommand(fallbackMethod="getCustomerProfileFallback"
+
+	
+	4. Add following properties to application.properties of customer
+	   hystrix.command.default.circuitBreaker.requestVolumeThreshold=4 	# try for min of 4 time(4 request in 10 sec), if atleast 2(50%) are showing the error then for next 1 min(60Sec) got to rest i.e it directly call the callback not profile
+	   hystrix.command.default.metrics.rollingStats.timeInMilliseconds= 10000   # 10 sec
+	   hystrix.command.default.circuitBreaker.errorThresholdPercentage=50		# 50%
+	   hystrix.command.default.circuitBreaker.sleepWindowInMilliseconds=60000	# 60 sec 
+	   
+	
+
+
+
+
+2. Zuul-API Gateway
+   -----------------
+ 
+ Zuul-API Gateway-3333
+ 
+ Plan MS 8400
+ Customoer MS 8200
+ Friend MS 8300
+ CallDetails MS 8100
+ 
+ 
+ # Its difficult to remember all port nos
+ 
+ # API Gateway-Zuul will do this job for us and we have to remember only one port no. 3333.
+ 
+ 
+ Configuration for Zuul:
+ ------------------------
+ 
+-> Make one more project API Gateway from spring initializer using spring initializer by selecting Zuul, config client and eureka discovery as dependency.
+
+->@EnableZuulProxy in main()
+
+->Add in bootstrap.properties 
+	   spring.cloun.config.uri=http://localhost:1111 # port no of config server i.e Eureka
+
+-> Add in application.properties
+	   sprign.app.name=zuulServer
+	   server.port=3333
+	   
+	   zuul.routes.plan.path=/plan/**
+	   zuul.routes.plan.strip-prefix=false
+	   zuul.routes.plan.service-id=PlanMS
+
+
+
+3. Sleuth-Tracing
+   ----------------
+
+-> Sleuth is used to trace all the logging activities like when customer made request to FrendMS or to Plan MS
+-> Add following dependency in all Ms
+   spring-cloud-starter-sleuth  
+-> Provide Extra information to logger(ie. traceID and span ID)
+-> Trace id is unique for a request
+-> span id is unique for a span(ex. going customer to Friend MS)
+
+/customers/9009009001
+[CustomerMS, t1, s2, false]
+[FriendMS, t1, s4, false]
+[PlanMS, t1, s5, false]
+
+/customers/9009009001
+[CustomerMS, t2, s7, false]
+[FriendMS, t2, s8, false]
+[PlanMS, t3, s9, false]
+
+
+[PlanMS, trace id, span id, false] 
+
+	false- if your MS is sending data to zipkin then it will be true otherwise it is false.
+ 
+ 
+ #To use zipkin configure zipkin in Tracer application(i.e. Sleuth Traacing app)
+ #In other microservies add following  dependency
+   sleuth-zipkin
+   starter-zipkin
+   
+ #sleuth is sending trace data to zipkin
+ # sprin boot 2.0.6 doesn't support zipkin i.e. we need downgrade our MS.
+ 
+ 
+ 
+   
+   
+ 
+	
